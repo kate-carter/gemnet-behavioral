@@ -1,4 +1,5 @@
 # Python file for processing raw Qualtrics output into analysis-ready files.
+# this file was written partially  by Claude
 
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ from openpyxl.styles import Font
 
 
 INPUT_DIRECTORY = Path(
-    "/Users/Kate/Documents/Binghamton-SPiNS/word-embedding-project/gemnet-2/gemini-2/behavioral_task/"
+    "/path/to/gemnet-2/gemini-2/behavioral_task/"
 )
 INPUT_FILE = "gemnet_task-1_4-22-2.xlsx"
 OUTPUT_SUBDIR = "concept_exports"

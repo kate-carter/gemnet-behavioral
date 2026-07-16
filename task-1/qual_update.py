@@ -3,6 +3,7 @@
 Usage:
   python qual_update.py --old /path/to/previous.xlsx --new /path/to/latest.xlsx
 """
+# this file was written partially by Claude
 
 from __future__ import annotations
 
@@ -36,7 +37,7 @@ BLOCK_SIZE = 15
 
 # Static directory for behavioral task exports.
 DATA_DIR = Path(
-    "/Users/Kate/Documents/Binghamton-SPiNS/word-embedding-project/gemnet-2/gemini-2/behavioral_task/"
+    "/path/to/gemnet-2/gemini-2/behavioral_task/"
 )
 
 # Default filenames for quick swapping between exports.

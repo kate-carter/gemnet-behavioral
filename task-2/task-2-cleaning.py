@@ -9,7 +9,7 @@ import numpy as np
 
 
 #data
-filepath = "/Users/Kate/Documents/Binghamton-SPiNS/word-embedding-project/gemnet-2/gemini-2/behavioral_task/task-2/qualtrics_exp/"
+filepath = "path/to/gemnet-2/gemini-2/behavioral_task/task-2/qualtrics_exp/"
 filename = "Stone_7-16.csv"  # will eventually change to be formulaic
 output_filename = "qualtrics_task-2-Stone-7-16-cleaned.xlsx"
 

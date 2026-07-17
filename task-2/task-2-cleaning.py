@@ -10,9 +10,9 @@ import numpy as np
 
 
 #data
-filepath = "/Users/Kate/Documents/Binghamton-SPiNS/word-embedding-project/gemnet-2/gemini-2/behavioral_task/task-2/qualtrics_exp/"
-filename = "Bed_7-17.xlsx"  # will eventually change to be formulaic
-output_filename = "qualtrics_task-2-Bed-7-17-cleaned.xlsx"
+filepath = "/path/to/gemini-2/behavioral_task/task-2/qualtrics_exp/"
+filename = "filename.xlsx"  # will eventually change to be formulaic
+output_filename = "filename.xlsx"
 
 #load data from qualtrics and convert to matrix
 path = os.path.join(filepath, filename)

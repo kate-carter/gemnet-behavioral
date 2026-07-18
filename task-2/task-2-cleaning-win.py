@@ -4,14 +4,15 @@
 #imports
 import pandas as pd
 import os
+import re
 import openpyxl
 import numpy as np
 
 
 #data
 filepath = r"C:\path\to\gemnet-2\gemini-2\behavioral_task\task-2\qualtrics_exp"
-filename = "Stone_7-16.csv"  # will eventually change to be formulaic
-output_filename = "qualtrics_task-2-Stone-7-16-cleaned.xlsx"
+filename = "filename.xlsx"  # will eventually change to be formulaic
+output_filename = "filename.xlsx"
 
 #load data from qualtrics and convert to matrix
 path = os.path.join(filepath, filename)
@@ -22,26 +23,32 @@ else:
 matrix = data.to_numpy()
 
 #critical feature: SET PER CONCEPT
-critical_feature = "heavy"
+critical_feature = "soft"
 
 #collect header info
 header_info = matrix[0:17, 0:3]
 
+# Flow-order columns look like FL_3_DO_gemstone / FL_4_DO_twinbed (number varies by survey).
+FLOW_DO_RE = re.compile(r"^FL_\d+_DO_(.+)$")
+
+
+def flow_concept(item):
+    if not isinstance(item, str):
+        return None
+    match = FLOW_DO_RE.match(item)
+    return match.group(1) if match else None
+
+
 #pull last n items of column one to create subconcept index
 row_1 = matrix[0, :]
 row_2 = matrix[1, :]
-subconcepts = [
-    item.replace("FL_3_DO_", "")
-    for item in row_1
-    if isinstance(item, str) and item.startswith("FL_3_DO_")
-]
+subconcepts = [c for item in row_1 if (c := flow_concept(item)) is not None]
+if not subconcepts:
+    raise ValueError("No FL_*_DO_* flow-order columns found in this export.")
 
 # Feature blocks start at each concept's Q2_1 column (first block may
 # include a leading "Required"/Q2 consent column before that).
-fl_start = next(
-    j for j, item in enumerate(row_1)
-    if isinstance(item, str) and item.startswith("FL_3_DO_")
-)
+fl_start = next(j for j, item in enumerate(row_1) if flow_concept(item) is not None)
 q2_1_cols = [j for j in range(17, fl_start) if row_1[j] == "Q2_1"]
 if row_1[17] == "Q2":
     block_starts = [17] + q2_1_cols[1:]
@@ -60,7 +67,19 @@ def is_selected(value):
 
 
 def feature_name(header):
-    return header.split("- ")[-1]
+    return header.split("- ")[-1].strip()
+
+
+def has_critical_feature(block_headers, block_data, critical):
+    """True if the critical feature's own column is selected in this block."""
+    critical_norm = critical.strip().lower()
+    for header, value in zip(block_headers, block_data):
+        if not (isinstance(header, str) and "Please" in header):
+            continue
+        if feature_name(header).lower() != critical_norm:
+            continue
+        return is_selected(value)
+    return False
 
 
 records = []
@@ -68,16 +87,21 @@ records = []
 for row_idx in range(3, matrix.shape[0]):
     participant_row = matrix[row_idx, :]
     participant_id = participant_row[8]  # ResponseId
-    time_completed = participant_row[1]
+    time_completed = pd.to_datetime(participant_row[1], errors="coerce")
+    if pd.notna(time_completed):
+        time_completed = time_completed.strftime("%-m/%-d/%y %-H:%M")
+    else:
+        time_completed = None
 
     # use flow order to determine which were seen
     flow_order = []
     for j, item in enumerate(row_1):
-        if isinstance(item, str) and item.startswith("FL_3_DO_"):
-            concept = item.replace("FL_3_DO_", "")
-            order = participant_row[j]
-            if pd.notna(order) and str(order).strip() != "":
-                flow_order.append((int(float(order)), concept))
+        concept = flow_concept(item)
+        if concept is None:
+            continue
+        order = participant_row[j]
+        if pd.notna(order) and str(order).strip() != "":
+            flow_order.append((int(float(order)), concept))
     flow_order.sort(key=lambda x: x[0])
 
     # pull data for each concept
@@ -102,7 +126,7 @@ for row_idx in range(3, matrix.shape[0]):
             "presentation_num": presentation_num,
             "concept": concept,
             "complete": len(sub_features) >= 10,
-            "critical": critical_feature in sub_features,
+            "critical": has_critical_feature(block_headers, block_data, critical_feature),
         }
 
         # add feature columns at the end

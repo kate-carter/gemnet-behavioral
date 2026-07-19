@@ -89,7 +89,7 @@ for row_idx in range(3, matrix.shape[0]):
     participant_id = participant_row[8]  # ResponseId
     time_completed = pd.to_datetime(participant_row[1], errors="coerce")
     if pd.notna(time_completed):
-        time_completed = time_completed.strftime("%-m/%-d/%y %-H:%M")
+        time_completed = time_completed.strftime("%m/%d/%y %H:%M")
     else:
         time_completed = None
 

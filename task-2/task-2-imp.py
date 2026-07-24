@@ -8,13 +8,12 @@ import openpyxl
 import numpy as np
 
 # CONFIG - edit this section
-
-filepath = "/path/to/gemini-2/behavioral_task/task-2/qualtrics_exp/"
-filename = "filename.csv"
-output_filename = "filename-imp.xlsx"
+filepath = "/path/to/directory"
+filename = "input.xlsx"
+output_filename = "output.xlsx"
 
 # set concept manually - must match a key in impossible_lists below
-CONCEPT = "cake"
+CONCEPT = "bed"
 
 # IMPOSSIBLE LISTS - placeholder empty lists, will fill these in once lists are finalized
 
@@ -28,7 +27,7 @@ impossible_lists = {
     "flower": ['easily melted', 'has a code', 'has a frame', 'has a headboard', 'has a keyboard', 'has a mattress', 'has a monitor', 'has a processor (CPU)', 'has a seatbelt', 'has a speaker', 'has a steering wheel', 'has a touchpad', 'has a touchscreen', 'has a trailer', 'has arm rests', 'has doors', 'has headlights', 'has memory foam', 'has mirrors', 'has or needs a key'],
     "lock": ['edible', 'farmed', 'grows in soil', 'grows on trees', 'contains eggs', 'contains flour', 'contains gluten', 'contains grain', 'contains yeast', 'has a straw', 'has blankets', 'has arm rests', 'has candles', 'has frosting', 'has icing', 'has memory foam', 'has petals', 'has roots', 'has sprinkles', 'has tubers', 'fried', 'cooked', 'boiled'],
     "pear": ['electrical', 'has four wheels', 'has a code', 'has a frame', 'has a headboard', 'has a keyboard', 'has a keyhole', 'has a mattress', 'has a monitor', 'has a processor (CPU)', 'has a seat', 'has a seatbelt', 'has a speaker', 'has a steering wheel', 'has a touchpad', 'has a touchscreen', 'has a trailer', 'has arm rests', 'has blankets', 'has doors', 'has exhaust', 'has four legs', 'has headlights', 'has large wheels', 'has memory foam', 'has mirrors', 'has or needs a key', 'has pillows', 'has windows'],
-    "plastic": ['ceramic', 'has a processor (CPU)', 'has a trailer', 'has arm rests', 'has blankets'],
+    "plastic": ['ceramic', 'has a processor (CPU)', 'has a trailer', 'has arm rests', 'has blankets', 'delicious', 'flavorful', 'ancient', 'edible', 'farmed', 'grows in soil', 'grows on trees', 'has a seatbelt'],
     "potato": ['has four wheels', 'has a code', 'has a frame', 'has a headboard', 'has a hood', 'has a keyboard', 'has a keyhole', 'has a mattress', 'has a monitor', 'has a mouse', 'has a processor (CPU)', 'has a seatbelt', 'has a speaker', 'has a steering wheel', 'has a touchpad', 'has a touchscreen', 'has a trailer', 'has arm rests', 'has exhaust', 'has four legs', 'has large wheels', 'has memory foam', 'has mirrors', 'has or needs a key', 'has pillows'],
     "spice": ['ceramic', 'electrical', 'has four wheels', 'has a code', 'has a frame', 'has a headboard', 'has a hood', 'has a keyboard', 'has a keyhole', 'has a mattress', 'has a monitor', 'has a processor (CPU)', 'has a seat', 'has a seatbelt', 'has a speaker', 'has a steering wheel', 'has a touchpad', 'has a touchscreen', 'has a trailer', 'has arm rests', 'has arms', 'has eyes', 'has four legs', 'has headlights', 'has large wheels', 'has memory foam', 'has mirrors', 'has or needs a key'],
     "spoon": ['has four wheels', 'has a code', 'has a cushion', 'has a headboard', 'has a hood', 'has a keyboard', 'has a keyhole', 'has a mattress', 'has a monitor', 'has a processor (CPU)', 'has a seatbelt', 'has a speaker', 'has a steering wheel', 'has a touchpad', 'has a touchscreen', 'has a trailer', 'has arm rests', 'has blankets', 'has doors', 'has exhaust', 'has four legs', 'has headlights', 'has large wheels', 'has memory foam', 'has mirrors', 'has or needs a key', 'has sheets', 'has windows'],
@@ -88,32 +87,34 @@ def feature_name(header):
 # Impossibility check 
 
 def check_impossible(sub_features, concept):
-    """ Returns False (invalid) if more than 5 of the participant's selected
-    features appear on the impossible list for this concept. """
+    """ Returns list of invalid features if more than 3 of the participant's selected
+    features appear on the impossible list across all concepts. """
     # normalize both lists to lowercase as a safety net in case of
     # capitalization mismatches between the survey and impossible list
     impossible = impossible_lists.get(concept.lower(), [])
     if not impossible:
         # no impossible list yet - default to valid
-        return True  
+        return []  
     impossible_cleaned = []
     for feature in impossible:
         impossible_cleaned.append(feature.strip().lower())
 
-    impossible_count = 0
+    trial_invalid = []
     for feature in sub_features:
         if feature.strip().lower() in impossible_cleaned:
-            impossible_count += 1
+            trial_invalid.append(feature)
     # True = valid, False = invalid
-    return impossible_count <= 5  
+    return trial_invalid
+
 
 # Main processing loop
 
 records = []
 
 for row_idx in range(3, matrix.shape[0]):
+    total_invalid = []
+    participant_trials = []
     participant_row = matrix[row_idx, :]
-    participant_id = participant_row[8]  # ResponseId
     time_completed = pd.to_datetime(participant_row[1], errors="coerce")
     if pd.notna(time_completed):
         time_completed = time_completed.strftime("%-m/%-d/%y %-H:%M")
@@ -122,6 +123,7 @@ for row_idx in range(3, matrix.shape[0]):
 
     # use flow order to determine which were seen
     flow_order = []
+    
     for j, item in enumerate(row_1):
         concept = flow_concept(item)
         if concept is None:
@@ -131,7 +133,7 @@ for row_idx in range(3, matrix.shape[0]):
             flow_order.append((int(float(order)), concept))
     flow_order.sort(key=lambda x: x[0])
 
-    # pull data for each concept
+    # pull data for each concept (concept loop)
     for presentation_num, (order, concept) in enumerate(flow_order, start=1):
         block = subconcepts.index(concept)
         block_start = block_starts[block]
@@ -145,29 +147,43 @@ for row_idx in range(3, matrix.shape[0]):
             if isinstance(header, str) and "Please" in header and is_selected(value)
         ]
 
+        trial_invalid = check_impossible(sub_features, CONCEPT)
+        for feature in trial_invalid:
+            total_invalid.append(feature)
+        
+        participant_trials.append({
+            "presentation_num": presentation_num,
+            "concept": concept, 
+            "sub_features": sub_features,
+            "trial_invalid": trial_invalid,
+            "complete": len(sub_features) >= 10,
+            })
+
+    #validity decision per participant
+    if len(total_invalid) >= 3:
+        valid = False
+    else:
+        valid = True
+
+
+    for trial in participant_trials:
         record = {
             "participant number": row_idx - 2,
-            "participant": participant_id,
+            "mturk_id": participant_row[18],
             "time_completed": time_completed,
-            "presentation_num": presentation_num,
-            "concept": concept,
-            "complete": len(sub_features) >= 10,
-            "valid": check_impossible(sub_features, CONCEPT),  # False if > 5 impossible features
+            "presentation_num": trial["presentation_num"],
+            "concept": trial["concept"],
+            "complete": trial["complete"],
+            "valid": valid,  # False for all concepts if 3+ impossible features total per participant
+            "invalid features": ", ".join(trial["trial_invalid"]),
         }
 
         # add feature columns at the end
-        for i, feat in enumerate(sub_features, start=1):
+        for i, feat in enumerate(trial["sub_features"], start=1):
             record[f"feat. {i}"] = feat
 
         records.append(record)
 
-# Output
-
-#create overall report for each subconcept
-
-#count how many times each subconcept was seen
-
-#count how many times each feature was picked for each subconcept
-
 df = pd.DataFrame(records)
 df.to_excel(os.path.join(filepath, output_filename), sheet_name="cleaned", index=False)
+

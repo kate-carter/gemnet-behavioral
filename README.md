@@ -10,7 +10,7 @@ everything is formatted for mac
 - task-2-cleaning is a validation script that performs several important steps when deciding whether or not to pay mturkers
 
 1. Did they complete the survey (give more than 10 answers)
-2. Did they include the "critical" dummy check item (a feature all subconcepts should have) \
-   **Critical MUST be manually configured for each subconcept** should be around line 20
+2. Did they press random buttons to hit the attention checks (screens for impossible features for a given concept)
+3. Did they pass the attention check in the demographics section of qualtrics
 
-It also organizes the data for easy vetting of the rest of the actual subtypes
+It also organizes the data for easy vetting of the rest of the actual subtypes and returns which impossible features they gave per concept.

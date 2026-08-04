@@ -134,7 +134,18 @@ for row_idx in range(3, matrix.shape[0]):
     flow_order.sort(key=lambda x: x[0])
 
     #pull mturk id
-    mturk_index = np.where(matrix[0, :] == 'Q139')[0][0]
+    if CONCEPT == "cake":
+        mturk_index = np.where(matrix[0, :] == 'Q151')[0][0]
+    elif CONCEPT == "computer" or CONCEPT == "pear":
+        mturk_index = np.where(matrix[0, :] == 'Q119')[0][0]
+    elif CONCEPT == "cup":
+        mturk_index = np.where(matrix[0, :] == 'Q131')[0][0]
+    elif CONCEPT == "flower" or CONCEPT == "lock" or CONCEPT == "plastic":
+        mturk_index = np.where(matrix[0, :] == 'Q149')[0][0]
+    elif CONCEPT == "potato":
+        mturk_index = np.where(matrix[0, :] == 'Q126')[0][0]
+    else:
+        mturk_index = np.where(matrix[0, :] == 'Q139')[0][0]
     mturk_id = participant_row[mturk_index]
 
     # pull data for each concept (concept loop)

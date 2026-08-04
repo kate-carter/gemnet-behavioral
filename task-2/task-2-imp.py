@@ -133,6 +133,10 @@ for row_idx in range(3, matrix.shape[0]):
             flow_order.append((int(float(order)), concept))
     flow_order.sort(key=lambda x: x[0])
 
+    #pull mturk id
+    mturk_index = np.where(matrix[0, :] == 'Q139')[0][0]
+    mturk_id = participant_row[mturk_index]
+
     # pull data for each concept (concept loop)
     for presentation_num, (order, concept) in enumerate(flow_order, start=1):
         block = subconcepts.index(concept)
@@ -169,7 +173,7 @@ for row_idx in range(3, matrix.shape[0]):
     for trial in participant_trials:
         record = {
             "participant number": row_idx - 2,
-            "mturk_id": participant_row[18],
+            "mturk_id": mturk_id,
             "time_completed": time_completed,
             "presentation_num": trial["presentation_num"],
             "concept": trial["concept"],

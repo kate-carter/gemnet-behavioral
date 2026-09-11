@@ -184,8 +184,8 @@ for row_idx in range(3, matrix.shape[0]):
     for trial in participant_trials:
         record = {
             "participant number": row_idx - 2,
-            "mturk_id": mturk_id,
             "time_completed": time_completed,
+            "mturk_id": mturk_id,
             "presentation_num": trial["presentation_num"],
             "concept": trial["concept"],
             "complete": trial["complete"],
